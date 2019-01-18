@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rotaract_app/utils/authprovider.dart';
 
+
 class EmailFieldValidator {
   static String validate(String value) {
     return value.isEmpty ? 'Email can\'t be empty' : null;
@@ -71,37 +72,73 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ))),
     );
+
   }
 
   List<Widget> buildInputs() {
     return [
       Container(
-          height: 100.0,
-          child: Image.network('https://pbs.twimg.com/profile_images/768405797998997504/C6hLIZSJ_400x400.jpg',)),
-      TextFormField(
+          //
+          height: 250.0,
+        padding: EdgeInsets.fromLTRB(0.0,50.0,0.0,0.0),
+          child: Image.asset('images/rh.png'),
+
+      ),
+
+
+        Container(
+          //height: 100.0,
+          padding: EdgeInsets.fromLTRB(10.0,150.0,10.0,10.0),
+          child:TextFormField(
         key: Key('email'),
-        decoration: InputDecoration(labelText: 'Email'),
+        decoration: InputDecoration(
+
+          hintText: 'Email',
+          contentPadding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+        ),
         validator: EmailFieldValidator.validate,
         onSaved: (value) => _email = value,
       ),
-      TextFormField(
+        ),
+      Container(
+        //height: 100.0,
+        padding: EdgeInsets.fromLTRB(10.0,20.0,10.0,10.0),
+       child:TextFormField(
         key: Key('password'),
-        decoration: InputDecoration(labelText: 'Password'),
+        decoration: InputDecoration(
+          hintText: 'Password',
+          contentPadding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
+        ),
         obscureText: true,
         validator: PasswordFieldValidator.validate,
         onSaved: (value) => _password = value,
       ),
+      ),
+
       Visibility(child: Text('Username or Password do not match', style: TextStyle(color: Colors.red)), maintainState: true,maintainAnimation: true, visible: errorVisibility)
     ];
   }
 
   List<Widget> buildSubmitButtons() {
       return [
-        RaisedButton(
-          key: Key('signIn'),
-          child: Text('Login', style: TextStyle(fontSize: 20.0)),
-          onPressed: validateAndSubmit,
+      Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Material(
+          borderRadius: BorderRadius.circular(30.0),
+          shadowColor: Colors.redAccent,
+          elevation: 5.0,
+          child: MaterialButton(
+            minWidth: 200.0,
+            height: 42.0,
+            onPressed: validateAndSubmit,
+            color: const Color(0xff9d030b),
+            child: Text('Log In', style: TextStyle(color: Colors.white)),
+          ),
         ),
+      ),
+
       ];
   }
 }
