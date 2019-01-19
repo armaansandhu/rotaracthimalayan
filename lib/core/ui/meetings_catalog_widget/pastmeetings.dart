@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rotaract_app/ui/meetingdescription/meetingdescription.dart';
+import 'package:rotaract_app/core/ui/meeting_description_widget/meeting_description.dart';
 
 class PastMeetings extends StatefulWidget {
   PastMeetings(this.data, this.id);
@@ -30,7 +30,7 @@ class _PastMeetingsState extends State<PastMeetings> with AutomaticKeepAliveClie
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       child: InkWell(
-          onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i], widget.id))),
+          onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i].reference, widget.id))),
           child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
               child: ListTile(
@@ -48,7 +48,7 @@ class _PastMeetingsState extends State<PastMeetings> with AutomaticKeepAliveClie
                         'Full Body',
                         style: TextStyle(color: Colors.white),
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: Colors.lightGreen,
                     )
                   ],
                 ),

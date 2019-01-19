@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:rotaract_app/utils/auth.dart';
+import 'package:rotaract_app/core/utils/auth.dart';
 
 
 class AuthProvider extends InheritedWidget {

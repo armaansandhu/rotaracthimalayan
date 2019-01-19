@@ -4,16 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Going extends StatefulWidget {
   Going(this.going);
-  final going;
+  final List<DocumentSnapshot> going;
 
   @override
   _GoingState createState() => _GoingState();
 }
 
-class _GoingState extends State<Going> with AutomaticKeepAliveClientMixin<Going> {
+class _GoingState extends State<Going>{
   _getGoing(int i) async{
     var userTileData;
-    await Firestore.instance.document(widget.going[i]).get().then((snapshot){
+    await Firestore.instance.document('users/${widget.going[i].data['id']}').get().then((snapshot){
       userTileData = snapshot.data;
     });
     return userTileData;
@@ -49,7 +49,5 @@ class _GoingState extends State<Going> with AutomaticKeepAliveClientMixin<Going>
         });
   }
 
-  @override
-  bool get wantKeepAlive => true;
 }
 

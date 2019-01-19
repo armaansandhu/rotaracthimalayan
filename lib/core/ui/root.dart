@@ -1,7 +1,8 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:rotaract_app/utils/authprovider.dart';
-import 'package:rotaract_app/ui/login.dart';
-import 'package:rotaract_app/ui/homepage.dart';
+import 'package:rotaract_app/core/utils/authprovider.dart';
+import 'package:rotaract_app/core/ui/login.dart';
+import 'package:rotaract_app/core/ui/homepage.dart';
 
 class RootPage extends StatefulWidget {
 
@@ -40,6 +41,13 @@ class _RootPageState extends State<RootPage> {
     setState(() {
       authStatus = AuthStatus.notSignedIn;
     });
+  }
+
+  FirebaseMessaging msg = FirebaseMessaging();
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override

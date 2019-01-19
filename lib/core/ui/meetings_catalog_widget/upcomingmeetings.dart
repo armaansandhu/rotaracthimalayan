@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rotaract_app/ui/meetingdescription/meetingdescription.dart';
+import 'package:rotaract_app/core/ui/meeting_description_widget/meeting_description.dart';
 
 class UpcomingMeetings extends StatefulWidget {
   UpcomingMeetings(this.data, this.id);
@@ -33,7 +33,7 @@ class _UpcomingMeetingsState extends State<UpcomingMeetings> with AutomaticKeepA
           child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
               child: InkWell(
-                onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i], widget.id))),
+                onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i].reference, widget.id))),
                 child: ListTile(
                   title: Row(
                     children: <Widget>[
@@ -49,13 +49,11 @@ class _UpcomingMeetingsState extends State<UpcomingMeetings> with AutomaticKeepA
                           'Full Body',
                           style: TextStyle(color: Colors.white),
                         ),
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: Colors.lightGreen,
                       )
                     ],
                   ),
-
                   isThreeLine: true,
-
                   contentPadding: EdgeInsets.all(16.0),
                   subtitle: Text(
                     widget.data[i].data['agenda'],
