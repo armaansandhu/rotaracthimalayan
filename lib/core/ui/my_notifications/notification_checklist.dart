@@ -15,28 +15,29 @@ class NotificationList extends StatefulWidget {
 class _NotificationListState extends State<NotificationList> {
   List<DocumentSnapshot> tmp = List();
 
-  sortList(List<DocumentSnapshot> docs){
-    docs.forEach((checkedDoc){
-      if(checkedDoc['checked'] == true)
-        tmp.add(checkedDoc);
+  sortList(List<DocumentSnapshot> docs, List<String> subscription){
+    docs.forEach((doc){
+      if(subscription.contains(doc['id']) == true)
+        tmp.add(doc);
     });
-    docs.forEach((notCheckedDoc){
-      if(notCheckedDoc['checked'] == false)
-        tmp.add(notCheckedDoc);
+    docs.forEach((doc){
+      if(subscription.contains(doc['id']) == false)
+        tmp.add(doc);
     });
+  }
+  List<String> subscription;
+  getSubsciption()async{
+    var docs;
+    await Firestore.instance.collection(widget.event).getDocuments().then((snap){
+      docs = snap.documents;
+      print(docs[0].data);
+    });
+    await Firestore.instance.document('users/${widget.user}').get().then((snap){
+      subscription = List.from(snap.data['subscription']);
+    });
+    sortList(docs,subscription);
   }
 
-  @override
-  void initState() {
-    notificationBloc.fetchNotificationDocuments(widget.user,widget.event);
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    notificationBloc.dispose();
-    super.dispose();
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,13 +46,13 @@ class _NotificationListState extends State<NotificationList> {
         elevation: 0.0,
         backgroundColor: Colors.primaries[widget.event.length],
       ),
-        body: StreamBuilder(
-          stream: notificationBloc.notificationDocumentStream,
+        body: FutureBuilder(
+          future: getSubsciption(),
           builder: (BuildContext context,AsyncSnapshot snapshot){
-            if(snapshot.hasData){
-              sortList(snapshot.data);
+            if(snapshot.connectionState == ConnectionState.done){
+              print(subscription);
               return ListView(
-                children: tmp.map((doc) => EventCheckBoxTile(name: doc['name'],value: doc['checked'],reference: doc.reference)).toList(),
+                children: tmp.map((doc) => EventCheckBoxTile(doc: doc,subscription: subscription,id : widget.user)).toList(),
               );
             }
             else
