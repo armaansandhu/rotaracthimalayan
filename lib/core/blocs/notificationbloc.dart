@@ -12,11 +12,10 @@ class NotificationBloc {
     _documentFetcher.sink.add(documents);
   }
 
-  dispose() async{
+  dispose() async {
     await _documentFetcher.drain();
     _documentFetcher.close();
   }
-
 }
 
 final notificationBloc = NotificationBloc();

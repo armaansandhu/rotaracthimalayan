@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user.dart';
+import 'package:rotaract_app/core/models/userInfo.dart';
 import 'api_call.dart';
 
-class Repository{
+class Repository {
   final apiCall = ApiCall();
 
-  Future<User> fetchUserInfo(BuildContext context) => apiCall.getUserInfo(context);
-  fetchNotificationDocuments(String user, String event) => apiCall.getDocuments(user, event);
-  fetchMeetingData(DocumentReference reference ) => apiCall.getMeetingData(reference);
-  Future<List<String>> fetchGoingList(DocumentReference reference) => apiCall.getGoingUser(reference);
+  Future<BasicUser> fetchUserInfo(BuildContext context) =>
+      apiCall.getUserInfo(context);
+
+  fetchNotificationDocuments(String user, String event) =>
+      apiCall.getDocuments(user, event);
+
+  fetchMeetingData(String reference) => apiCall.getMeetingData(reference);
+
+  Future<List<String>> fetchGoingList(DocumentReference reference) =>
+      apiCall.getGoingUser(reference);
 }

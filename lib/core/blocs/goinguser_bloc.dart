@@ -13,11 +13,10 @@ class GoingListBloc {
     _documentFetcher.sink.add(documents);
   }
 
-  dispose() async{
+  dispose() async {
     await _documentFetcher.drain();
     _documentFetcher.close();
   }
-
 }
 
 final goingUserListBloc = GoingListBloc();
