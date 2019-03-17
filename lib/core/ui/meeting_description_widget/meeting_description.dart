@@ -9,9 +9,8 @@ import 'package:rotaract_app/core/ui/meeting_description_widget/going_user_list_
 
 class MeetingDescription extends StatefulWidget {
   MeetingDescription(this.meetingReference, this.id);
-  final DocumentReference meetingReference;
+  final String meetingReference;
   final id;
-
   @override
   _MeetingDescriptionState createState() => _MeetingDescriptionState();
 }
@@ -20,15 +19,17 @@ class _MeetingDescriptionState extends State<MeetingDescription> {
   final Firestore firestore = Firestore.instance;
   Meeting meeting;
   String id;
-  ScrollController scrollController;
 
-  Size screenSize(BuildContext context) => MediaQuery.of(context).size;
+  Size screenSize(BuildContext context) =>
+      MediaQuery
+          .of(context)
+          .size;
 
-  _updateGoingList(){
+  _updateGoingList() {
     return StreamBuilder(
         stream: meetingBloc.notificationDocumentStream,
-        builder: (BuildContext context,AsyncSnapshot snapshot) {
-          if (snapshot.hasData){
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.hasData) {
             meeting = snapshot.data;
             return Scaffold(
                 appBar: _appBar(),
@@ -45,6 +46,7 @@ class _MeetingDescriptionState extends State<MeetingDescription> {
   @override
   void initState() {
     meetingBloc.fetchNotificationDocuments(widget.meetingReference);
+    print(widget.id);
     id = widget.id;
     super.initState();
   }
@@ -54,30 +56,30 @@ class _MeetingDescriptionState extends State<MeetingDescription> {
     return _updateGoingList();
   }
 
-  Widget _buildContent(){
+  Widget _buildContent() {
     return ListView(
-      controller: scrollController,
-              children: <Widget>[
-                _title(),
-                _descriptionText(),
-                _dateAndPlace(),
-                ConfirmationButton(meeting,id),
-                Divider(height: 0.0,),
-                GoingUserList(meeting)
-              ],
-            );
+      children: <Widget>[
+        _title(),
+        _descriptionText(),
+        Divider(height: 0,),
+        _dateAndPlace(),
+        ConfirmationButton(meeting, id),
+        Divider(height: 0.0,),
+        GoingUserList(meeting)
+      ],
+    );
   }
 
-  Widget _appBar(){
+  Widget _appBar() {
     return AppBar(
-      title: Text(meeting.category),
+      title: Text("${meeting.category} Meeting"),
       backgroundColor: themeColor,
     );
   }
 
-  Widget _title(){
+  Widget _title() {
     return Padding(
-      padding: const EdgeInsets.only(top : 24.0),
+      padding: const EdgeInsets.only(top: 24.0),
       child: Center(
         child: InkWell(
           child: Text(
@@ -89,29 +91,32 @@ class _MeetingDescriptionState extends State<MeetingDescription> {
     );
   }
 
-  Widget _descriptionText(){
+  Widget _descriptionText() {
     return Padding(
         padding: const EdgeInsets.only(top: 32.0, bottom: 16.0),
         child: DescriptionTextWidget(text: meeting.agenda)
     );
   }
 
-  Widget _dateAndPlace(){
-    return Column(
-      children: <Widget>[
-        Divider(),
-        ListTile(
-          leading: Icon(Icons.access_time, color: Colors.blue,),
-          title: Text(meeting.date),
-          subtitle: Text(meeting.time),
-        ),
-        ListTile(
-          leading: Icon(Icons.location_on, color: Colors.blue,),
-          title: Text(meeting.location),
-          subtitle: Text('Sector 14, Chandigarh'),
-        ),
-        Divider(height: 0.0,)
-      ],
+  Widget _dateAndPlace() {
+    return Container(
+      color: Color.fromRGBO(0, 0, 0, 0.05),
+      child: Column(
+        children: <Widget>[
+
+          ListTile(
+            leading: Icon(Icons.access_time, color: Colors.blue,),
+            title: Text(meeting.date),
+            subtitle: Text(meeting.time),
+          ),
+          ListTile(
+            leading: Icon(Icons.location_on, color: Colors.blue,),
+            title: Text(meeting.location),
+            subtitle: Text('Sector 14, Chandigarh'),
+          ),
+          Divider(height: 0.0,)
+        ],
+      ),
     );
   }
 

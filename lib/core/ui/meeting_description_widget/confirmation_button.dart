@@ -28,21 +28,24 @@ class _ConfirmationButtonState extends State<ConfirmationButton> with TickerProv
   bool isLoading;
   String dp;
   List<dynamic> myMeetingList;
+  DocumentReference reference;
 
   @override
   void initState() {
     super.initState();
+    reference = Firestore.instance.document(widget.meeting.reference);
     isLoading = true;
     id = widget.id;
     _controller = AnimationController(vsync: this,duration: Duration(milliseconds: 100));
     initButtonView();
   }
   initButtonView() async{
+    print(id);
     await Firestore.instance.document('users/$id').get().then((snapshot){
       dp = snapshot.data['dp'];
-      myMeetingList = List.from(snapshot.data['meetings']);
+      myMeetingList = List.from(widget.meeting.going);
     });
-    await widget.meeting.reference.collection('going').document(id).get()
+    await reference.collection('going').document(id).get()
         .then((docSnapshot){
       if(docSnapshot.exists) {
         buttonView = ButtonView.going;
@@ -59,9 +62,9 @@ class _ConfirmationButtonState extends State<ConfirmationButton> with TickerProv
 
   initializeAnimationState() async{
     var curve = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-      colorAnimation = ColorTween(begin: Colors.grey,end: Colors.green).animate(curve)
-        ..addListener((){setState(() {});});
-      position = Tween(begin: 0.0, end: 20.0).animate(curve);
+    colorAnimation = ColorTween(begin: Colors.grey,end: Colors.green).animate(curve)
+      ..addListener((){setState(() {});});
+    position = Tween(begin: 0.0, end: 20.0).animate(curve);
     setState(() {
       isLoading = false;
     });
@@ -75,46 +78,46 @@ class _ConfirmationButtonState extends State<ConfirmationButton> with TickerProv
 
   @override
   Widget build(BuildContext context) {
-        if(isLoading == false)
-          return Container(
-            height: 120.0,
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Container(
-                    height: 80.0,
-                    width: MediaQuery.of(context).size.width*.6,
-                    child: Center(child: confirmationText),
-                  ),
-                  GestureDetector(
-                      onTap: () async {
-                        if(buttonView == ButtonView.going){
-                          setState(() {
-                            buttonColor = Colors.white;
-                            confirmationText = Text("Are you going?", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20.0,color: Colors.grey),);
-                          });
-                          await _controller.forward();
-                          await _controller.reverse();
-                          await notGoing();
-                        }
-                        else if(buttonView == ButtonView.undecided){
-                          setState(() {
-                            buttonColor = Colors.green;
-                            confirmationText = Text("Hurray! You're coming.", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20.0,color: Colors.green),);
-                          });
-                          await _controller.forward();
-                          await _controller.reverse();
-                          await going();
+    if(isLoading == false)
+      return Container(
+        height: 120.0,
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Container(
+                height: 80.0,
+                width: MediaQuery.of(context).size.width*.6,
+                child: Center(child: confirmationText),
+              ),
+              GestureDetector(
+                  onTap: () async {
+                    if(buttonView == ButtonView.going){
+                      setState(() {
+                        buttonColor = Colors.white;
+                        confirmationText = Text("Are you going?", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20.0,color: Colors.grey),);
+                      });
+                      await _controller.forward();
+                      await _controller.reverse();
+                      await notGoing();
+                    }
+                    else if(buttonView == ButtonView.undecided){
+                      setState(() {
+                        buttonColor = Colors.green;
+                        confirmationText = Text("Hurray! You're coming.", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20.0,color: Colors.green),);
+                      });
+                      await _controller.forward();
+                      await _controller.reverse();
+                      await going();
 
-                        }
-                        buttonView = buttonView == ButtonView.going ? ButtonView.undecided : ButtonView.going;
-                      },
-                      child: CircleAvatar(radius: 30.0 + position.value,backgroundColor: buttonColor,
-                        child: Icon(Icons.thumb_up,size: 30.0,)
-                        ))]),
-          );
-        else
-          return _buttonPlaceHolder();
+                    }
+                    buttonView = buttonView == ButtonView.going ? ButtonView.undecided : ButtonView.going;
+                  },
+                  child: CircleAvatar(radius: 30.0 + position.value,backgroundColor: buttonColor,
+                      child: Icon(Icons.thumb_up,size: 30.0,)
+                  ))]),
+      );
+    else
+      return _buttonPlaceHolder();
   }
 
   Widget _buttonPlaceHolder(){
@@ -149,22 +152,22 @@ class _ConfirmationButtonState extends State<ConfirmationButton> with TickerProv
   }
 
   going() async{
-    await widget.meeting.reference.collection('going').document('$id').setData({
+    await reference.collection('going').document('$id').setData({
       'id' : id,
       'dp' : dp,
     });
     myMeetingList.removeWhere((item) => item == widget.meeting.reference);
-    myMeetingList.add(widget.meeting.reference);
-    await Firestore.instance.document('users/$id').updateData({
-      'meetings' : myMeetingList
+    myMeetingList.add(widget.id);
+    await reference.updateData({
+      'going' : myMeetingList
     });
   }
 
   notGoing() async{
-    myMeetingList.removeWhere((item) => item == widget.meeting.reference);
-    await widget.meeting.reference.collection('going').document(id).delete();
-    await Firestore.instance.document('users/$id').updateData({
-      'meetings' : myMeetingList
+    myMeetingList.removeWhere((item) => item == widget.id);
+    await reference.collection('going').document(id).delete();
+    await reference.updateData({
+      'going' : myMeetingList
     });
   }
 }

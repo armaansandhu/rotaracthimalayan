@@ -12,7 +12,9 @@ class UpcomingMeetings extends StatefulWidget {
 class _UpcomingMeetingsState extends State<UpcomingMeetings> with AutomaticKeepAliveClientMixin<UpcomingMeetings>{
   @override
   Widget build(BuildContext context) {
-    return _buildUpcomingMeetingsList();
+    return Scaffold(
+      body: widget.data == null ? Center(child: Text('Empty'),) : _buildUpcomingMeetingsList()
+    );
   }
 
   @override
@@ -33,7 +35,7 @@ class _UpcomingMeetingsState extends State<UpcomingMeetings> with AutomaticKeepA
           child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
               child: InkWell(
-                onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i].reference, widget.id))),
+                onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i]['reference'], widget.id))),
                 child: ListTile(
                   title: Row(
                     children: <Widget>[

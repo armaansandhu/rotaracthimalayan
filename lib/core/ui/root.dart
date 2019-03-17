@@ -1,11 +1,9 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:rotaract_app/core/utils/authprovider.dart';
 import 'package:rotaract_app/core/ui/login.dart';
-import 'package:rotaract_app/core/ui/homepage.dart';
+import 'package:rotaract_app/core/ui/homepage/homepage.dart';
 
 class RootPage extends StatefulWidget {
-
   @override
   State<StatefulWidget> createState() => _RootPageState();
 }
@@ -26,7 +24,7 @@ class _RootPageState extends State<RootPage> {
     auth.currentUser().then((userId) {
       setState(() {
         authStatus =
-        userId == null ? AuthStatus.notSignedIn : AuthStatus.signedIn;
+            userId == null ? AuthStatus.notSignedIn : AuthStatus.signedIn;
       });
     });
   }
@@ -43,22 +41,17 @@ class _RootPageState extends State<RootPage> {
     });
   }
 
-  FirebaseMessaging msg = FirebaseMessaging();
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     switch (authStatus) {
       case AuthStatus.notDetermined:
         return _buildWaitingScreen(context);
       case AuthStatus.notSignedIn:
-        return LoginPage(onSignedIn: _signedIn,);
+        return LoginPage(
+          onSignedIn: _signedIn,
+        );
       case AuthStatus.signedIn:
-        return HomePage(onSignedOut: _signedOut,);
+        return HomePage(onSignedOut: _signedOut);
     }
     return null;
   }

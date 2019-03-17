@@ -1,32 +1,44 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:rotaract_app/core/models/user.dart';
 import 'package:rotaract_app/core/ui/my_meetings.dart';
-import 'package:rotaract_app/core/ui/notification_list_widget/notification_category_list.dart';
+import 'package:rotaract_app/core/ui/my_notifications/notification_category_list.dart';
 import 'package:rotaract_app/core/ui/profile/path.dart';
 import 'package:rotaract_app/core/utils/authprovider.dart';
-import 'package:rotaract_app/core/models/user.dart';
 import 'package:rotaract_app/core/constants/constants.dart';
-import 'package:rotaract_app/core/blocs/userbloc.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_native_image/flutter_native_image.dart';
 
 class MyProfile extends StatefulWidget {
-  MyProfile({this.onSignedOut, this.id});
+  MyProfile({this.onSignedOut, this.id, this.user});
   final VoidCallback onSignedOut;
   final String id;
+  final User user;
   @override
   _MyProfileState createState() => _MyProfileState();
 }
 
 class _MyProfileState extends State<MyProfile> {
-  User userSub;
+  var dp = null;
+  var localDp = 'images/placeholder.png';
+  User user;
+
+  getUser() async{
+    Stopwatch stopwatch = Stopwatch();
+    stopwatch..start();
+    var user = await Firestore.instance.document('users/${widget.id}').get();
+    dp = user.data['dp'];
+    print(stopwatch.elapsed.inSeconds);
+    return user.data;
+  }
 
   void _signOut(BuildContext context) async {
     try {
-      userSub.projects.forEach((f)=> FirebaseMessaging().unsubscribeFromTopic(f));
-      userSub.committees.forEach((f)=> FirebaseMessaging().unsubscribeFromTopic(f));
-      userSub.events.forEach((f)=> FirebaseMessaging().unsubscribeFromTopic(f));
+      widget.user.subscription.forEach((f)=> FirebaseMessaging().unsubscribeFromTopic(f));
       var auth = AuthProvider.of(context).auth;
       await auth.signOut();
       widget.onSignedOut();
@@ -49,6 +61,7 @@ class _MyProfileState extends State<MyProfile> {
 
   Future uploadImage() async {
     var tempImage = await ImagePicker.pickImage(source: ImageSource.gallery);
+    File compressedImage = await FlutterNativeImage.compressImage(tempImage.path,quality: 30);
     StorageReference profileImageRef = FirebaseStorage.instance.ref().child('users/${widget.id}');
     setState(() {
       isImageUploading = true;
@@ -58,23 +71,67 @@ class _MyProfileState extends State<MyProfile> {
         isImageUploading = false;
       });
     } else {
-      var task = await profileImageRef.putFile(tempImage).onComplete.then((_){
-        setState(() {
-          isImageUploading = false;
-        });
+      var task = await profileImageRef.putFile(compressedImage);
+      var newDP = await profileImageRef.getDownloadURL();
+      await Firestore.instance.document('users/${widget.id}').updateData({
+        'dp':'$newDP'
       });
+      setState(() {
+        dp = newDP;
+      });
+      isImageUploading = false;
     }
-    var newDP = await profileImageRef.getDownloadURL();
-    await Firestore.instance.document('users/${widget.id}').updateData({
-      'dp':'$newDP'
-    });
   }
 
+  imageContainer(){
+    return Container(
+      width: 120.0,
+      height: 120.0,
+      decoration: new BoxDecoration(
+          color: const Color(0xff7c94b6),
+          borderRadius:
+          new BorderRadius.all(new Radius.circular(100.0)),
+          border: new Border.all(
+            color: Colors.white,
+            width: 2.0,
+          ),
+          boxShadow: [
+            new BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, 0.1),
+                offset: new Offset(0.0, 5.0),
+                blurRadius: 10.0)
+          ]),
+      child: FutureBuilder(
+          future: getUser(),
+          builder: (BuildContext context,AsyncSnapshot snapshot){
+            if(snapshot.connectionState == ConnectionState.done)
+              return Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(new Radius.circular(100.0)),
+                    image: DecorationImage(
+                      image: dp == null ? AssetImage(localDp) : NetworkImage(dp,),
+                      fit: BoxFit.cover,
+                    )
+                ),
+              );
+            else return Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.all(new Radius.circular(100.0)),
+                color: Colors.grey
+              ),
+            );
+          }),
+    );
+
+
+
+  }
 
   Widget _buildImageBox(User user){
     return ClipPath(
       clipper: ImageCurve(),
       child: Container(
+        height: MediaQuery.of(context).size.height*0.3,
         color: themeColor,
         child: Center(
           child: Column(
@@ -87,32 +144,11 @@ class _MyProfileState extends State<MyProfile> {
                       onTap: ()async{
                         await showDialog(context: context,builder: (_) => SimpleDialog(
                           children: <Widget>[
-                            Image.network(user.dp)
+                            dp == null ? Image.asset(localDp) : Image.network(dp)
                           ],
                         ));
                       },
-                      child: isImageUploading == false ? Container(
-                        width: 120.0,
-                        height: 120.0,
-                        decoration: new BoxDecoration(
-                            color: const Color(0xff7c94b6),
-                            image: DecorationImage(
-                              image: new NetworkImage(user.dp ),
-                              fit: BoxFit.cover,
-                            ),
-                            borderRadius:
-                            new BorderRadius.all(new Radius.circular(100.0)),
-                            border: new Border.all(
-                              color: Colors.white,
-                              width: 2.0,
-                            ),
-                            boxShadow: [
-                              new BoxShadow(
-                                  color: Color.fromRGBO(0, 0, 0, 0.1),
-                                  offset: new Offset(0.0, 5.0),
-                                  blurRadius: 10.0)
-                            ]),
-                      ) :
+                      child: isImageUploading == false ? imageContainer() :
                       Container(
                         width: 120.0,
                         height: 120.0,
@@ -138,7 +174,7 @@ class _MyProfileState extends State<MyProfile> {
                           child: CircleAvatar(
                               radius: 16.0,
                               child: Icon(Icons.edit,size: 20.0,))),
-                      right: 0.0, top: 0.0,)
+                      right: 0.0, bottom: 0.0,)
                   ],
                 ),
               ),
@@ -178,7 +214,7 @@ class _MyProfileState extends State<MyProfile> {
         ListTile(
           leading: Text('My Meetings', style: TextStyle(fontSize: 18.0, color: leadingColor)),
           trailing: Icon(Icons.navigate_next),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MyMeetings(user.id,user.myMeetings))),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MyMeetings(user.id))),
         ),
         ListTile(
           leading: Text('My Notifications', style: TextStyle(fontSize: 18.0, color: leadingColor)),
@@ -201,7 +237,6 @@ class _MyProfileState extends State<MyProfile> {
   }
 
   Widget _buildUI(user){
-    userSub = user;
     return Column(
       children: <Widget>[
         _buildImageBox(user),
@@ -240,22 +275,18 @@ class _MyProfileState extends State<MyProfile> {
   }
 
   @override
+  void initState() {
+    user = widget.user;
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    userBloc.fetchUserInfo(context);
     return Scaffold(
       appBar: _appBar(),
       backgroundColor: Colors.white,
       body: Container(
-          child: StreamBuilder(
-            stream: userBloc.userStream,
-            builder: (BuildContext context,AsyncSnapshot snapshot){
-              if(snapshot.hasData){
-                return _buildUI(snapshot.data);
-              }
-              else
-                return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(themeColor)));
-            },
-          )
+          child: _buildUI(widget.user)
       ),
     );
   }

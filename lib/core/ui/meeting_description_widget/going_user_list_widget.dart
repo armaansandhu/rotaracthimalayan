@@ -16,7 +16,7 @@ class _GoingUserListState extends State<GoingUserList> {
   DocumentReference reference;
   @override
   void initState() {
-    reference = widget.meeting.reference;
+    reference = Firestore.instance.document(widget.meeting.reference);
     super.initState();
   }
 

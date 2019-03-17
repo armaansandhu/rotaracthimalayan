@@ -33,10 +33,10 @@ class _DescriptionTextWidgetState extends State<DescriptionTextWidget> {
     return new Container(
       padding: new EdgeInsets.symmetric(horizontal: 10.0),
       child: secondHalf.isEmpty
-          ? new Text(firstHalf)
+          ? new Text(firstHalf,style: TextStyle(fontSize: 16.0,height: 1.1),)
           : new Column(
         children: <Widget>[
-          new Text(flag ? (firstHalf + "...") : (firstHalf + secondHalf),style: TextStyle(fontSize: 18.0,height: 1.1),),
+          new Text(flag ? (firstHalf + "...") : (firstHalf + secondHalf),style: TextStyle(fontSize: 16.0,height: 1.1),),
           new GestureDetector(
             child: new Row(
               mainAxisAlignment: MainAxisAlignment.end,

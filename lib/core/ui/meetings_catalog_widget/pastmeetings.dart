@@ -13,7 +13,10 @@ class PastMeetings extends StatefulWidget {
 class _PastMeetingsState extends State<PastMeetings> with AutomaticKeepAliveClientMixin<PastMeetings> {
   @override
   Widget build(BuildContext context) {
-    return _buildUpcomingMeetingsList();
+    print(widget.id);
+    return Scaffold(
+        body: widget.data == null ? Text('Empty',style: TextStyle(color: Colors.black),) : _buildUpcomingMeetingsList()
+    );
   }
 
   @override
@@ -30,7 +33,7 @@ class _PastMeetingsState extends State<PastMeetings> with AutomaticKeepAliveClie
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       child: InkWell(
-          onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i].reference, widget.id))),
+          onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(widget.data[i]['reference'], widget.id))),
           child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
               child: ListTile(
