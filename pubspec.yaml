@@ -20,16 +20,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
   cloud_firestore: ^0.8.2+3
-  firebase_auth: ^0.6.6
-  intl : ^0.15.7
   firebase_messaging : ^2.1.0
-  rxdart: any
-  shimmer : ^0.0.6
+  firebase_auth: ^0.6.6
   firebase_storage : any
-  image_picker:
+  rxdart:
+  url_launcher:
+  shimmer:
+  intl:
+  datetime_picker_formfield:
   flutter_native_image:
     git: https://github.com/btastic/flutter_native_image.git
-
+  image_picker: ^0.4.12
+  shared_preferences:
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,6 +47,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+   - images/placeholder.png
+   - images/rh.png
+   - images/committees.jpg
+   - images/events.jpg
+   - images/projects.jpg
 
 
   # To add assets to your application, add an assets section, like this:
