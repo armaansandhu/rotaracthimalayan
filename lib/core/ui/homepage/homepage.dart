@@ -1,19 +1,22 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rotaract_app/core/models/user.dart';
 import 'package:rotaract_app/core/ui/admin/manage_users.dart';
 import 'package:rotaract_app/core/ui/announcements.dart';
-import 'package:rotaract_app/core/ui/meeting_management/manage_meetings.dart';
 import 'package:rotaract_app/core/ui/meeting_management/meeting_schedule.dart';
-import 'package:rotaract_app/core/ui/help.dart';
-import 'package:rotaract_app/core/ui/mainlist.dart';
 import 'package:rotaract_app/core/ui/meeting_description_widget/meeting_description.dart';
 import 'package:rotaract_app/core/ui/meeting_management/view_scheduled_meetings.dart';
+import 'package:rotaract_app/core/ui/meetingindex/meetingindex.dart';
+import 'package:rotaract_app/core/ui/notifications/user_notifcations.dart';
 import 'package:rotaract_app/core/ui/profile/profile.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:async/async.dart';
+import 'package:rotaract_app/core/ui/splashscreen.dart';
+import 'package:rotaract_app/core/ui/wiki/wiki.dart';
 import 'package:rotaract_app/core/utils/authprovider.dart';
 import 'package:rotaract_app/core/constants/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({this.onSignedOut});
@@ -22,73 +25,74 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin{
   Size screenSize(BuildContext context) => MediaQuery.of(context).size;
   final msg = new FirebaseMessaging();
   final firestore = Firestore.instance;
   final memoizer = AsyncMemoizer();
   String userId;
   User user;
+
+
   _getSubscribtion() {
     return memoizer.runOnce(() async{
-      Map<String,dynamic> data = {'userInfo' : null, 'projects' : null,'events' : null,'committees' : null,};
+
       userId = await AuthProvider.of(context).auth.currentUser();
       await Firestore.instance.collection('users').document(userId).get().then((snapshot) {
-        if (snapshot.exists) {
-          data['userInfo'] = snapshot.data;
-        }
+        user = User.fromJson(snapshot.data);
+        print(snapshot.data);
       });
-      await Firestore.instance.collection('users/$userId/projects').getDocuments().then((snapshot) {
-        if (snapshot.documents.isNotEmpty) {
-          data['projects'] = snapshot.documents;
-        }
-      });
-      await Firestore.instance.collection('users/$userId/events').getDocuments().then((snapshot) {
-        if (snapshot.documents.isNotEmpty) {
-          data['events'] = snapshot.documents;
-        }
-      });
-
-      await Firestore.instance.collection('users/$userId/committees').getDocuments().then((snapshot) {
-        if (snapshot.documents.isNotEmpty) {
-          data['committees'] = snapshot.documents;
-        }
-      });
-      user = User.fromJson(data);
-      print(user.projects);
-      user.projects.forEach((f) => FirebaseMessaging().subscribeToTopic(f.toLowerCase().replaceAll(' ', '_')));
-      user.committees.forEach((f) => FirebaseMessaging().subscribeToTopic(f.toLowerCase().replaceAll(' ', '_')));
-      user.events.forEach((f) => FirebaseMessaging().subscribeToTopic(f.toLowerCase().replaceAll(' ', '_')));
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      bool isLoadedFirst = preferences.getBool(userId);
+      if(isLoadedFirst == null){
+        user.subscription.forEach((f) => FirebaseMessaging().subscribeToTopic(f));
+        preferences.setBool(userId, false);
+      }
       return Future.delayed(Duration(seconds: 0));
+    });
+  }
+
+  getRoutes(mssg) {
+    if(mssg['data']['type'] == 'meeting'){
+      var reference  = mssg['data']['reference'];
+      return Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(reference,userId)));
+    }
+  }
+  int notificationCount = null;
+  userneww()async{
+    var usernew = await FirebaseAuth.instance.currentUser();
+    print(usernew.email);
+    Firestore.instance.collection('users/${usernew.uid}/notifications')
+        .where('seen', isEqualTo: false)
+        .getDocuments()
+        .then((snap){
+      setState(() {
+        notificationCount = snap.documents.length;
+      });
     });
   }
 
   @override
   void initState() {
+    userneww();
     msg.requestNotificationPermissions();
     msg.configure(
-        onLaunch: (mssg) async{
+        onLaunch: (mssg) async {
           print('onLaunch : $mssg');
-          await Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => Help(mssg)));
+          var tempUser = await FirebaseAuth.instance.currentUser();
+          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(mssg['reference'], tempUser.uid)));
         },
         onResume: (mssg) async{
           print('onResume : $mssg');
-          await getRoutes(mssg);
+          var tempUser = await FirebaseAuth.instance.currentUser();
+          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(mssg['reference'], tempUser.uid)));
         },
         onMessage: (mssg) async{
-          print('onMessage : $mssg');
-          await Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => Help(mssg)));
-        }
+          print('onMessage : $mssg');}
     );
     super.initState();
   }
 
-  getRoutes(mssg) async{
-    if(mssg['type'] == 'meeting'){
-      var snapshot  = await firestore.document(mssg['reference']).get();
-      await Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MeetingDescription(snapshot.reference,userId)));
-    }
-  }
   options(BuildContext context){
     return FutureBuilder(future: _getSubscribtion(),builder: (BuildContext context,AsyncSnapshot snapshot){
       if(snapshot.connectionState == ConnectionState.done)
@@ -98,12 +102,12 @@ class _HomePageState extends State<HomePage> {
               children: <Widget>[
                 Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.red, const Color(0xFFE64C85)
-                    ])
+                      gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.red, const Color(0xFFE64C85)
+                          ])
                   ),
                   height: 100.0,
                 ),
@@ -112,7 +116,23 @@ class _HomePageState extends State<HomePage> {
                   children: <Widget>[
                     Column(
                       children: <Widget>[
-                        AppBar(elevation: 0.0,backgroundColor: Colors.transparent,),
+                        AppBar(
+                          title: Text('Rotaract Himalayan'),
+                          elevation: 0.0,backgroundColor: Colors.transparent,
+                          actions: <Widget>[
+                            Stack(
+                              children: <Widget>[
+                                IconButton(
+                                  icon: Icon(Icons.notifications,color: Colors.white,size: 30,),
+                                  onPressed: ()=> getRoute(context,UserNotifications(userId)),
+                                ),
+                                Positioned(child: CircleAvatar(child: Text(notificationCount == null ? '0' : '$notificationCount',style: TextStyle(
+                                    fontSize: 10
+                                ),),radius: 8,),top: 10,right: 4,)
+                              ],
+                            )
+                          ],
+                        ),
                         SizedBox(height: 10.0,),
                         content()
                       ],
@@ -124,66 +144,53 @@ class _HomePageState extends State<HomePage> {
             )
         );
       else
-        return CircularProgressIndicator();
+        return SplashScreen();
     });
   }
-
+  bool notification = false;
   content(){
     var cardColor = Colors.white ;
     var textColor = Colors.black;
     return Column(
       children: <Widget>[
         Container(
-          height: screenSize(context).height * .7,
-          child: GridView(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2),
-            physics: NeverScrollableScrollPhysics(),
+          height: screenSize(context).height * .85,
+          child: ListView(
             children: <Widget>[
-              Card(
-                  color: cardColor,
-                  child: InkWell(
-                    radius: 20.0,
-                    onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context)=> MainList('projects'))),
-                    child: Container(
-                        child: Center(child: Text('Meetings',style: TextStyle(
-                            color: textColor,
-                            fontSize: 24.0
-                        ),))),
-                  )),
-              Card(
-                  color: cardColor,
-                  child: InkWell(
-                    onTap: ()=> getRoute(context, Announcements()),
-                    child: Container(
-                        child: Center(child: Text('Announcements',style: TextStyle(
-                            color: textColor,
-                            fontSize: 24.0
-                        ),))),
-                  )),
-              Card(
-                  color: cardColor,
-                  child: InkWell(
-                    onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context)=> MainList('events'))),
-                    child: Container(
-                        child: Center(child: Text('Events',style: TextStyle(
-                            color: textColor,
-                            fontSize: 24.0
-                        ),))),
-                  )),
-              Card(
-                  color: cardColor,
-                  child: InkWell(
-                      onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) => MyProfile(onSignedOut: widget.onSignedOut, id: userId,user: user))),
-                      child: Container(
-                          child: Center(child: Text('Profile',style: TextStyle(
-                              color: textColor,
-                              fontSize: 24.0
-                          ),))))),
+              homeTile('Rotaract Wiki',Wiki()),
+              homeTile('Announcements', Announcements()),
+              homeTile('Meetings', MeetingIndex(user.id)),
+              homeTile('Profile', MyProfile(onSignedOut: widget.onSignedOut, id: userId,user: user))
             ],
           ),
         ),
       ],
+    );
+  }
+  var tileColor = Colors.white;
+  Widget homeTile(String text,Widget child,{notification}){
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Container(
+        width: MediaQuery.of(context).size.width * .8,
+        height: 120,
+        child: Material(
+            color: notification == true ? Colors.red : tileColor,
+            borderRadius: BorderRadius.all(Radius.circular(5)),
+            elevation: 10,
+            shadowColor: Color.fromRGBO(10, 0, 100, 0.1),
+            child: InkWell(
+              splashColor: Colors.red,
+              onTap: ()async{
+                getRoute(context,child);
+              },
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Center(
+                    child: Text(text,style: Theme.of(context).textTheme.title,)),
+              ),
+            )),
+      ),
     );
   }
 
@@ -193,6 +200,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
             children: <Widget>[
               ListTile(title: Text('Admin Options',style: Theme.of(context).textTheme.title.copyWith(color: themeColor),),),
+              Divider(),
               ListTile(
                 title: Text('Schedule Meeting'),
                 onTap: () => getRoute(context, ScheduleMeeting(user.id)),
@@ -224,7 +232,7 @@ class _HomePageState extends State<HomePage> {
       theme: ThemeData(
           primaryColor: themeColor),
       home: SafeArea(
-        child: options(context)
+          child: options(context)
       ),
     );
   }
